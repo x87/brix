@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../dist/out-tsc/apps/brix",
+    "types": []
+  },
+  "exclude": [
+    "src/test.ts",
+    "**/*.spec.ts",
+    "karma.conf.ts"
+  ],
+  "include": [
+    "**/*.ts",
+  	/* add all lazy-loaded libraries here */
+  	"../../libs/editor/src/index.ts"
+  ]
+}

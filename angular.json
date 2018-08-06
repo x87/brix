@@ -1,0 +1,166 @@
+{
+  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+  "version": 1,
+  "newProjectRoot": "",
+  "projects": {
+    "brix": {
+      "root": "apps/brix/",
+      "sourceRoot": "apps/brix/src",
+      "projectType": "application",
+      "prefix": "apps/brix",
+      "schematics": {
+        "@schematics/angular:component": {
+          "styleext": "scss"
+        }
+      },
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:browser",
+          "options": {
+            "outputPath": "dist/apps/brix",
+            "index": "apps/brix/src/index.html",
+            "main": "apps/brix/src/main.ts",
+            "polyfills": "apps/brix/src/polyfills.ts",
+            "tsConfig": "apps/brix/tsconfig.app.json",
+            "assets": [
+              "apps/brix/src/favicon.ico",
+              "apps/brix/src/assets"
+            ],
+            "styles": [
+              "apps/brix/src/styles.scss"
+            ],
+            "scripts": []
+          },
+          "configurations": {
+            "production": {
+              "fileReplacements": [
+                {
+                  "replace": "apps/brix/src/environments/environment.ts",
+                  "with": "apps/brix/src/environments/environment.prod.ts"
+                }
+              ],
+              "optimization": true,
+              "outputHashing": "all",
+              "sourceMap": false,
+              "extractCss": true,
+              "namedChunks": false,
+              "aot": true,
+              "extractLicenses": true,
+              "vendorChunk": false,
+              "buildOptimizer": true
+            }
+          }
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "options": {
+            "browserTarget": "brix:build"
+          },
+          "configurations": {
+            "production": {
+              "browserTarget": "brix:build:production"
+            }
+          }
+        },
+        "extract-i18n": {
+          "builder": "@angular-devkit/build-angular:extract-i18n",
+          "options": {
+            "browserTarget": "brix:build"
+          }
+        },
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "main": "apps/brix/src/test.ts",
+            "polyfills": "apps/brix/src/polyfills.ts",
+            "tsConfig": "apps/brix/tsconfig.spec.json",
+            "karmaConfig": "apps/brix/karma.conf.js",
+            "styles": [
+              "apps/brix/src/styles.scss"
+            ],
+            "scripts": [],
+            "assets": [
+              "apps/brix/src/favicon.ico",
+              "apps/brix/src/assets"
+            ]
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/brix/tsconfig.app.json",
+              "apps/brix/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**"
+            ]
+          }
+        }
+      }
+    },
+    "brix-e2e": {
+      "root": "apps/brix-e2e/",
+      "projectType": "application",
+      "architect": {
+        "e2e": {
+          "builder": "@angular-devkit/build-angular:protractor",
+          "options": {
+            "protractorConfig": "apps/brix-e2e/protractor.conf.js",
+            "devServerTarget": "brix:serve"
+          },
+          "configurations": {
+            "production": {
+              "devServerTarget": "brix:serve:production"
+            }
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": "apps/brix-e2e/tsconfig.e2e.json",
+            "exclude": [
+              "**/node_modules/**"
+            ]
+          }
+        }
+      }
+    },
+    "editor": {
+      "root": "libs/editor",
+      "sourceRoot": "libs/editor/src",
+      "projectType": "library",
+      "prefix": "brix",
+      "architect": {
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "main": "libs/editor/src/test.ts",
+            "tsConfig": "libs/editor/tsconfig.spec.json",
+            "karmaConfig": "libs/editor/karma.conf.js"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "libs/editor/tsconfig.lib.json",
+              "libs/editor/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "cli": {
+    "warnings": {
+      "typescriptMismatch": false,
+      "versionMismatch": false
+    },
+    "defaultCollection": "@nrwl/schematics"
+  },
+  "defaultProject": "brix"
+}

@@ -7,13 +7,14 @@ import { RouterModule } from '@angular/router';
 import { routes } from './app.routes';
 
 @NgModule({
-  declarations: [AppComponent],
-  imports: [
-    BrowserModule,
-    NxModule.forRoot(),
-    RouterModule.forRoot(routes, { initialNavigation: 'enabled' })
-  ],
-  providers: [],
-  bootstrap: [AppComponent]
+	declarations: [AppComponent],
+	imports: [
+		BrowserModule,
+		NxModule.forRoot(),
+		RouterModule.forRoot(routes, { initialNavigation: 'enabled' })
+	],
+	providers: [],
+	bootstrap: [AppComponent]
 })
-export class AppModule {}
+export class AppModule {
+}

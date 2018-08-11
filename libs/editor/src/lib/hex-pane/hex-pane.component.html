@@ -1,0 +1,9 @@
+<div class="content">
+	<span
+		*ngFor="let char of content.split('')"
+		class="char">
+		{{
+		('00' + char.charCodeAt(0).toString(16)).slice(-2).toUpperCase()
+		}}
+	</span>
+</div>

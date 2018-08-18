@@ -1,15 +1,14 @@
+.editor {
+	max-height: 75vh;
+	overflow: auto;
+	font-family: 'Source Code Pro', monospace;
+}
+
 .pane {
 	flex: 1;
-	font-family: 'Source Code Pro', monospace;
 }
 
 .panes {
 	display: flex;
-	flex-direction: row
-}
-
-.divider {
-	width: 2px;
-	margin: 0 5px;
-	background: #aaa;
+	flex-direction: row;
 }

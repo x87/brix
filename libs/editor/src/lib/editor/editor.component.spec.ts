@@ -1,6 +1,10 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { EditorComponent } from './editor.component';
+import { HexPaneComponent } from '../hex-pane/hex-pane.component';
+import { ScrollingModule } from '@angular/cdk-experimental/scrolling';
+import { HexCodePipe } from '../pipes/HexCode.pipe';
+import { PrintableAsciiPipe } from '../pipes/PrintableAscii.pipe';
 
 describe('EditorComponent', () => {
 	let component: EditorComponent;
@@ -8,7 +12,15 @@ describe('EditorComponent', () => {
 
 	beforeEach(async(() => {
 		TestBed.configureTestingModule({
-			declarations: [EditorComponent]
+			declarations: [
+				EditorComponent,
+				HexPaneComponent,
+				HexCodePipe,
+				PrintableAsciiPipe
+			],
+			imports: [
+				ScrollingModule
+			]
 		})
 			.compileComponents();
 	}));

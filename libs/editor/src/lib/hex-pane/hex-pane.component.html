@@ -1,9 +1,18 @@
-<div class="content">
-	<span
-		*ngFor="let char of content.split('')"
-		class="char">
-		{{
-		('00' + char.charCodeAt(0).toString(16)).slice(-2).toUpperCase()
-		}}
-	</span>
+<div class="content" #pane>
+	<cdk-virtual-scroll-viewport
+		class="virtual-viewport"
+		[bufferSize]="35"
+		[itemSize]="20">
+		<div *cdkVirtualFor="let row of rows; let i = index"
+			 class="row"
+			 [ngClass]="{ 'odd': i % 2 }">
+			<span class="char hex" *ngFor="let char of row">
+				{{ char | hexCode }}
+			</span>
+			<span class="char"></span>
+			<span class="char text" *ngFor="let char of row">
+				{{ char | printableAscii }}
+			</span>
+		</div>
+	</cdk-virtual-scroll-viewport>
 </div>

@@ -1,0 +1,33 @@
+.char {
+	display: inline-block;
+	font-size: 80%;
+	width: 20px;
+	height: 20px;
+	text-align: center;
+}
+
+.content {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-start;
+	height: 75vh; // todo;
+}
+
+.virtual-viewport {
+	height: 100%;
+	width: 100%;
+}
+
+.row {
+	height: 20px;
+	line-height: 20px;
+	display: flex;
+	&.odd {
+		background: rgba(0, 0, 0, 0.05);
+	}
+}
+
+.char.text {
+	user-select: none;
+	width: 8px;
+}

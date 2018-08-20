@@ -9,4 +9,10 @@
 	<input type="file"
 		   (change)="onOpen($event)"
 		   value="Open">
+	<textarea
+		[ngModelOptions]="{ updateOn: 'blur' }"
+		[(ngModel)]="scheme"></textarea>
+	<brix-template-pane
+		[data]="reader?.data"
+		[scheme]="scheme"></brix-template-pane>
 </div>

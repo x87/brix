@@ -1,8 +1,7 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "outDir": "../../dist/out-tsc/apps/brix",
-    "types": []
+    "outDir": "../../dist/out-tsc/apps/brix"
   },
   "exclude": [
     "src/test.ts",

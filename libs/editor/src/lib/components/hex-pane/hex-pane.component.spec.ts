@@ -1,32 +1,27 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { EditorComponent } from './editor.component';
-import { HexPaneComponent } from '../hex-pane/hex-pane.component';
 import { ScrollingModule } from '@angular/cdk-experimental/scrolling';
-import { HexCodePipe } from '../pipes/HexCode.pipe';
-import { PrintableAsciiPipe } from '../pipes/PrintableAscii.pipe';
+import { HexPaneComponent } from '../';
+import { HexCodePipe, PrintableAsciiPipe } from '../../pipes';
 
-describe('EditorComponent', () => {
-	let component: EditorComponent;
-	let fixture: ComponentFixture<EditorComponent>;
+describe('HexPaneComponent', () => {
+	let component: HexPaneComponent;
+	let fixture: ComponentFixture<HexPaneComponent>;
 
 	beforeEach(async(() => {
 		TestBed.configureTestingModule({
 			declarations: [
-				EditorComponent,
 				HexPaneComponent,
 				HexCodePipe,
 				PrintableAsciiPipe
 			],
-			imports: [
-				ScrollingModule
-			]
+			imports: [ScrollingModule]
 		})
 			.compileComponents();
 	}));
 
 	beforeEach(() => {
-		fixture = TestBed.createComponent(EditorComponent);
+		fixture = TestBed.createComponent(HexPaneComponent);
 		component = fixture.componentInstance;
 		fixture.detectChanges();
 	});

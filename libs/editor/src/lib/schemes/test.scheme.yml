@@ -1,0 +1,17 @@
+---
+SYSTEMTIME:
+ wYear: word
+ wMonth: word
+ wDayOfWeek: word
+ wDay: word
+ wHour: word
+ wMinute: word
+ wSecond: word
+ wMilliseconds: word
+
+entry:
+ size: dword
+ data:
+  szTitle: wchar_t[24]
+  systemTime: SYSTEMTIME
+...

@@ -1,4 +1,4 @@
-import { EditorComponent } from './editor/editor.component';
+import { EditorComponent } from './components';
 
 export const routes = [
 	{

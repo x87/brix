@@ -2,22 +2,28 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ScrollingModule } from '@angular/cdk-experimental/scrolling';
+import { FormsModule } from '@angular/forms';
 
 import { routes } from './editor.routes';
-import { HexPaneComponent } from './hex-pane/hex-pane.component';
-import { EditorComponent } from './editor/editor.component';
-import { HexCodePipe } from './pipes/HexCode.pipe';
-import { PrintableAsciiPipe } from './pipes/PrintableAscii.pipe';
-
+import {
+	EditorComponent,
+	HexPaneComponent,
+	TemplatePaneComponent
+} from './components';
+import {
+	HexCodePipe, PrintableAsciiPipe
+} from './pipes';
 
 @NgModule({
 	declarations: [
 		HexPaneComponent,
 		EditorComponent,
+		TemplatePaneComponent,
 		HexCodePipe,
 		PrintableAsciiPipe
 	],
 	imports: [
+		FormsModule,
 		CommonModule,
 		RouterModule.forChild(routes),
 		ScrollingModule

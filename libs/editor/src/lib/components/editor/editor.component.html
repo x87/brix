@@ -12,7 +12,11 @@
 	<textarea
 		[ngModelOptions]="{ updateOn: 'blur' }"
 		[(ngModel)]="scheme"></textarea>
+</div>
+
+<div class="panes">
 	<brix-template-pane
+		class="pane"
 		[data]="reader?.data"
 		[scheme]="scheme"></brix-template-pane>
 </div>

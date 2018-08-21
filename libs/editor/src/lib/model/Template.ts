@@ -1,6 +1,7 @@
 import * as yml from 'js-yaml';
 
-const arrayRegex = new RegExp('(\\w+)(\\[(.+)\\])?');
+const arrayRegex = new RegExp('(\\w+)(\\[(.+)\\])');
+const bitFieldRegex = new RegExp('(\\w+)(\\:(\\d+))');
 
 export enum Primitive {
 	Byte = 'byte',
@@ -12,31 +13,45 @@ export enum Primitive {
 	Dword = 'dword',
 	Float = 'float',
 	Wchar_t = 'wchar_t',
-	String = 'string'
 }
 
 export interface Scheme {
 	[key: string]: string | Scheme;
 }
 
-export interface MainScheme extends Scheme {
+export type SchemeWithEntry = Scheme & {
 	// file scheme may have an optional entry point to start from
 	// as there are could be custom structures declared in the same scheme
 	entry?: Scheme;
 }
 
 export interface Node {
+	title: string;
 	nodes?: Node[];
 	value?: string;
-	title?: string;
 }
 
 export class AST {
 	root?: Node;
+	traverse(cb: (node: Node, level: number) => void): void {
+		let level = 0;
+		const walk = (node: Node) => {
+			cb(node, level);
+			if (node && node.nodes) {
+				level ++;
+				for (const n of node.nodes) {
+					walk(n);
+				}
+				level --;
+			}
+		};
+
+		if (this.root) walk(this.root);
+	}
 }
 
 export class Template {
-	private scheme: MainScheme | null;
+	private scheme: SchemeWithEntry | null;
 	private offset: number;
 
 	constructor(scheme: string) {
@@ -44,30 +59,36 @@ export class Template {
 	}
 
 	parse(data: DataView): AST {
+		if (!this.scheme) throw new Error('No valid scheme');
+
 		const ast = new AST();
 		this.offset = 0;
 		ast.root = {
-			nodes: this.parseScheme(data, this.scheme.entry
-				? this.scheme.entry
-				: this.scheme
+			title: '',
+			nodes: this.parseScheme(
+				data, this.scheme.entry || this.scheme
 			)
 		};
 		return ast;
 	}
 
 	private parseScheme(data: DataView, scheme: Scheme): Node[] {
-		const nodes = [];
+		const nodes: Node[] = [];
+		if (!scheme) throw new Error('Invalid scheme provided to parseScheme');
+
 		for (const [key, type] of Object.entries(scheme)) {
 			// nested block
 			if (this.isScheme(type)) {
 				nodes.push({
+					title: key,
 					nodes: this.parseScheme(data, type)
 				});
 			} else {
 				// custom struct defined in scheme
-				const customType = this.scheme[type];
-				if (this.isScheme(customType)) {
+				const customType = this.scheme![type];
+				if (this.isScheme(customType) && (type !== 'entry')) {
 					nodes.push({
+						title: key,
 						nodes: this.parseScheme(data, customType)
 					});
 				} else {
@@ -84,9 +105,10 @@ export class Template {
 		return nodes;
 	}
 
-	private moveCursor(declaredType: string): number {
-		const { primitive, len } = this.typeToPrimitive(declaredType);
+	private moveCursor(declaredType: string): void {
+		const { primitive, count } = this.typeToPrimitive(declaredType);
 		switch (primitive) {
+			case Primitive.Float:
 			case Primitive.Dword:
 			case Primitive.Int32:
 				this.offset += 4;
@@ -100,20 +122,22 @@ export class Template {
 			case Primitive.Int8:
 				this.offset += 1;
 				return;
-			case Primitive.String:
-				this.offset += len;
-				return;
 			case Primitive.Wchar_t:
-				this.offset += len * 2;
+				this.offset += count * 2;
 				return;
-
+			default:
+				throw new Error(`Unknown primitive value ${primitive}`);
 		}
 	}
 
 	private readValue(
 		data: DataView, offset: number, type: Primitive | string
 	): number | string {
-		const { primitive, len } = this.typeToPrimitive(type);
+		const { primitive, count, bits } = this.typeToPrimitive(type);
+		if (bits) {
+			const value = +this.readValue(data, offset, primitive);
+			return this.readBits(value, bits);
+		}
 		switch (primitive) {
 			case Primitive.Dword:
 				return data.getUint32(offset, true);
@@ -132,17 +156,9 @@ export class Template {
 
 			case Primitive.Float:
 				return data.getFloat32(offset, true);
-			case Primitive.String: {
-				let i = 0;
-				while (i < len && this.readValue(data, offset + i, Primitive.Byte)) {
-					i++;
-				}
-				const utf8View = new Uint8Array(data.buffer, offset, i);
-				return String.fromCharCode.apply(null, utf8View);
-			}
 			case Primitive.Wchar_t: {
 				let i = 0;
-				while (i < len && this.readValue(data, offset + (i * 2), Primitive.Word)) {
+				while (i < count && this.readValue(data, offset + (i * 2), Primitive.Word)) {
 					i++;
 				}
 				const utf16View = new Uint16Array(data.buffer, offset, i);
@@ -151,15 +167,27 @@ export class Template {
 		}
 	}
 
-	private typeToPrimitive(type: Primitive | string): { primitive: Primitive; len: number} {
-		const matches = arrayRegex.exec(type);
-		if (matches) {
+	private typeToPrimitive(type: Primitive | string): {
+		primitive: Primitive;
+		count: number,
+		bits?: number
+	} {
+		const indexed = arrayRegex.exec(type);
+		if (indexed) {
 			return {
-				primitive: this.toPrimitive(matches[1]),
-				len: this.getTypeLen(matches[3])
+				primitive: this.toPrimitive(indexed[1]),
+				count: this.getTypeLen(indexed[3])
 			}
 		}
-		return { primitive: this.toPrimitive(type), len: 1 };
+		const bitfield = bitFieldRegex.exec(type);
+		if (bitfield) {
+			return {
+				primitive: this.toPrimitive(bitfield[1]),
+				count: 1,
+				bits: this.getTypeLen(bitfield[3])
+			}
+		}
+		return { primitive: this.toPrimitive(type), count: 1 };
 	}
 
 	private getTypeLen(val: string): number {
@@ -180,6 +208,11 @@ export class Template {
 		}
 		throw new Error(`Unknown primitive type ${val}`);
 	}
+
+	private readBits(value: number, bits: number): number {
+		return ((1 << bits) - 1) & value;
+	}
+
 }
 
 

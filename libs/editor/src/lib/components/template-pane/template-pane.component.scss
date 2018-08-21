@@ -1,0 +1,13 @@
+.virtual-viewport {
+	height: 50vh;
+	width: 100%;
+}
+
+.row {
+	height: 20px;
+	line-height: 20px;
+	display: flex;
+	&.odd {
+		background: rgba(0, 0, 0, 0.05);
+	}
+}

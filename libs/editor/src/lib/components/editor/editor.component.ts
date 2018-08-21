@@ -19,7 +19,7 @@ export class EditorComponent implements OnInit {
 
 	onOpen($event: Event): void {
 		const { files } = $event.target as HTMLInputElement;
-		if (files.length) {
+		if (files && files.length) {
 			const fileStream = new FileStream(files[0]);
 			fileStream.stream.subscribe(
 				data => {

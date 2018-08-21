@@ -1,5 +1,6 @@
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { AST, Template } from '../../model/Template';
+import { Node } from '../../model/Template';
 
 @Component({
 	selector: 'brix-template-pane',
@@ -13,10 +14,26 @@ export class TemplatePaneComponent implements OnChanges {
 	template: Template;
 	ast: AST;
 
+	fields: Array<{
+		title: string;
+		value: string;
+		level: number;
+	}>;
+
 	ngOnChanges(changes: SimpleChanges): void {
 		if (this.scheme && this.data) {
 			this.template = new Template(this.scheme);
 			this.ast = this.template.parse(this.data);
+
+			this.fields = [];
+			this.ast.traverse((node: Node, level: number) => {
+				this.fields.push({
+					title: node.title!,
+					value: node.value!,
+					level
+				});
+			});
+
 		}
 	}
 

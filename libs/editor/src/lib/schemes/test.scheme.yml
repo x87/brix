@@ -1,17 +1,29 @@
 ---
 SYSTEMTIME:
- wYear: word
- wMonth: word
- wDayOfWeek: word
- wDay: word
- wHour: word
- wMinute: word
- wSecond: word
- wMilliseconds: word
+    wYear:         word
+    wMonth:        word
+    wDayOfWeek:    word
+    wDay:          word
+    wHour:         word
+    wMinute:       word
+    wSecond:       word
+    wMilliseconds: word
+
+RwV3D:
+    x: float
+    y: float
+    z: float
 
 entry:
- size: dword
- data:
-  szTitle: wchar_t[24]
-  systemTime: SYSTEMTIME
+    size:          dword
+    data:
+        szTitle:                    wchar_t[24]
+        systemTime:                 SYSTEMTIME
+        unknown1:                   dword
+        eCurrentLevel:              dword
+        vCamPos:                    RwV3D
+        nMillisecondsPerGameMinute: dword
+        nLastClockTick:             dword
+        nHours:                     dword:8
+        nMinutes:                   dword:8
 ...

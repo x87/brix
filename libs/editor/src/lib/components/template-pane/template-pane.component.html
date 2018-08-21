@@ -1,6 +1,14 @@
-<p>
-	Template: {{ template | json}}
-</p>
-<p>
-	AST: {{ ast | json}}
-</p>
+<cdk-virtual-scroll-viewport
+	class="virtual-viewport"
+	[bufferSize]="35"
+	[itemSize]="20">
+	<table>
+		<tr *cdkVirtualFor="let field of fields; let i = index"
+			class="row"
+			[style.padding-left.px]="15 * field.level"
+			[ngClass]="{ 'odd': i % 2 }">
+			<td width="200px">{{ field.title}}</td>
+			<td>{{ field.value}}</td>
+		</tr>
+	</table>
+</cdk-virtual-scroll-viewport>

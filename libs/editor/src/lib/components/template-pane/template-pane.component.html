@@ -7,8 +7,15 @@
 			class="row"
 			[style.padding-left.px]="15 * field.level"
 			[ngClass]="{ 'odd': i % 2 }">
-			<td width="200px">{{ field.title}}</td>
-			<td>{{ field.value}}</td>
+			<td class="cell"
+				[title]="field.title"
+				width="200px">{{ field.title }}</td>
+			<td class="cell"
+				width="200px"
+				[title]="field.value">{{ field.value }}</td>
+			<td class="cell"
+				width="200px"
+				[title]="field.offset">{{ field.offset }}</td>
 		</tr>
 	</table>
 </cdk-virtual-scroll-viewport>

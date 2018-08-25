@@ -18,6 +18,7 @@ export class TemplatePaneComponent implements OnChanges {
 		title: string;
 		value: string;
 		level: number;
+		offset: number;
 	}>;
 
 	ngOnChanges(changes: SimpleChanges): void {
@@ -30,6 +31,7 @@ export class TemplatePaneComponent implements OnChanges {
 				this.fields.push({
 					title: node.title!,
 					value: node.value!,
+					offset: node.offset,
 					level
 				});
 			});

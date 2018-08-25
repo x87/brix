@@ -1,8 +1,3 @@
-.editor {
-	overflow: auto;
-	font-family: 'Source Code Pro', monospace;
-}
-
 .pane {
 	flex: 1;
 }
@@ -10,4 +5,9 @@
 .panes {
 	display: flex;
 	flex-direction: row;
+}
+
+.cols {
+	display: flex;
+	flex-direction: column;
 }

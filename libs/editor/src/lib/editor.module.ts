@@ -6,6 +6,7 @@ import { FormsModule } from '@angular/forms';
 
 import { routes } from './editor.routes';
 import {
+	DataPaneComponent,
 	EditorComponent,
 	HexPaneComponent,
 	TemplatePaneComponent
@@ -19,6 +20,7 @@ import {
 		HexPaneComponent,
 		EditorComponent,
 		TemplatePaneComponent,
+		DataPaneComponent,
 		HexCodePipe,
 		PrintableAsciiPipe
 	],

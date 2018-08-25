@@ -1,22 +1,24 @@
-<div class="editor">
-	<div class="panes">
-		<brix-hex class="pane"
-				  [content]="content"></brix-hex>
-	</div>
-</div>
-
 <div class="panes">
-	<input type="file"
-		   (change)="onOpen($event)"
-		   value="Open">
-	<textarea
-		[ngModelOptions]="{ updateOn: 'blur' }"
-		[(ngModel)]="scheme"></textarea>
+	<brix-hex class="pane"
+			  [content]="content"></brix-hex>
+	<brix-data-pane
+		[data]="reader?.data"
+		[pos]="0">
+	</brix-data-pane>
 </div>
-
 <div class="panes">
 	<brix-template-pane
 		class="pane"
 		[data]="reader?.data"
 		[scheme]="scheme"></brix-template-pane>
+	<div class="cols">
+		<input type="file"
+			   (change)="onOpen($event)"
+			   value="Open">
+		<textarea
+			class="pane"
+			wrap="off"
+			[ngModelOptions]="{ updateOn: 'blur' }"
+			[(ngModel)]="scheme"></textarea>
+	</div>
 </div>

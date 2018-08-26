@@ -25,6 +25,10 @@ export type SchemeWithEntry = Scheme & {
 	entry?: Scheme;
 }
 
+export interface Scope {
+	[key: string]: number | string;
+}
+
 export interface Node {
 	title: string;
 	offset: number;
@@ -51,6 +55,12 @@ export class AST {
 	}
 }
 
+interface TypeFlags {
+	bits?: number;
+	align: number
+}
+
+
 export class Template {
 	private scheme: SchemeWithEntry | null;
 	private offset: number;
@@ -68,14 +78,19 @@ export class Template {
 			title: '',
 			offset: 0,
 			nodes: this.parseScheme(
-				data, this.scheme.entry || this.scheme
+				data,
+				this.scheme.entry || this.scheme,
+				{}
 			)
 		};
 		return ast;
 	}
 
-	private parseScheme(data: DataView, scheme: Scheme): Node[] {
+	private parseScheme(data: DataView, scheme: Scheme, parentScope: Scope): Node[] {
 		const nodes: Node[] = [];
+		const scope: any = {};
+		// if (parentScope) scope.$$parent = parentScope;
+
 		if (!scheme) throw new Error('Invalid scheme provided to parseScheme');
 		for (const [title, declaredType] of Object.entries(scheme)) {
 			const offset = this.offset;
@@ -85,19 +100,22 @@ export class Template {
 				nodes.push({
 					title,
 					offset,
-					nodes: this.parseScheme(data, declaredType)
+					nodes: this.parseScheme(data, declaredType, scope)
 				});
 				continue;
 			}
 
 			// array
-			const { type, count, bits } = this.parseType(declaredType);
+			const { type, count, flags } = this.parseType(declaredType, scope);
 			if (count > 1 && !this.isString(type)) {
 				nodes.push({
 					title,
 					offset,
-					nodes: this.parseScheme(data, this.typeToScheme(type, count))
+					nodes: this.parseScheme(
+						data, this.typeToScheme(type, count, flags, title), scope
+					)
 				});
+				this.moveCursor(Primitive.Byte, flags.align);
 				continue;
 			}
 
@@ -107,35 +125,41 @@ export class Template {
 				nodes.push({
 					title,
 					offset,
-					nodes: this.parseScheme(data, customType)
+					nodes: this.parseScheme(data, customType, scope)
 				});
+				this.moveCursor(Primitive.Byte, flags.align);
 				continue;
 			}
 
 			// single primitive value
 			const value = this.readValue(data, offset, type, count);
-			const res = bits
-				? this.sliceBits(+value, bits)
+			const res = flags.bits
+				? this.sliceBits(+value, flags.bits)
 				: value;
 			nodes.push({
 				title,
 				offset,
 				value: res.toString()
 			});
+			scope[title] = value;
+			this.moveCursor(Primitive.Byte, flags.align);
 		}
 		return nodes;
 	}
 
-	private typeToScheme(type: string, count: number): Scheme {
+	private typeToScheme(
+		type: string, count: number, flags: TypeFlags, title: string
+	): Scheme {
 		const res = {};
+		const newType = type + (flags.align ? `;align ${flags.align}` : '');
 		for (let i = 0; i < count; i += 1) {
-			res[i] = type;
+			res[`${title}[${i}]`] = newType;
 		}
 		return res;
 	}
 
 	private isString(type: string): boolean {
-		return type === Primitive.Wchar_t;
+		return type === Primitive.Wchar_t || type === Primitive.Char;
 	}
 
 	private moveCursor(primitive: Primitive, count: number = 1): void {
@@ -168,7 +192,12 @@ export class Template {
 		const primitive = this.toPrimitive(type);
 		if (count > 1) {
 			if (primitive === Primitive.Wchar_t) {
-				const res = this.readWString(data, offset, count);
+				const res = this.readStringW(data, offset, count);
+				this.moveCursor(primitive, count);
+				return res;
+			}
+			if (primitive === Primitive.Char) {
+				const res = this.readString(data, offset, count);
 				this.moveCursor(primitive, count);
 				return res;
 			}
@@ -183,9 +212,7 @@ export class Template {
 		return res;
 	}
 
-	private readWString(
-		data: DataView, offset: number, count: number
-	): string {
+	private readStringW(data: DataView, offset: number, count: number): string {
 		let i = 0;
 		while (i < count && this.readPrimitive(Primitive.Word, data, offset + (i * 2))) {
 			i++;
@@ -193,6 +220,16 @@ export class Template {
 		const utf16View = new Uint16Array(data.buffer, offset, i);
 		return String.fromCharCode.apply(null, utf16View);
 	}
+
+	private readString(data: DataView, offset: number, count: number): string {
+		let i = 0;
+		while (i < count && this.readPrimitive(Primitive.Byte, data, offset + i)) {
+			i++;
+		}
+		const utf8View = new Uint8Array(data.buffer, offset, i);
+		return String.fromCharCode.apply(null, utf8View);
+	}
+
 
 	private readPrimitive(
 		primitive: Primitive, data: DataView, offset: number
@@ -211,39 +248,54 @@ export class Template {
 			case Primitive.Char:
 			case Primitive.Int8:
 				return data.getInt8(offset);
-
 			case Primitive.Float:
 				return data.getFloat32(offset, true);
 			case Primitive.Wchar_t:
-				return this.readWString(data, offset, 1);
+				return this.readStringW(data, offset, 1);
 		}
 	}
 
-	private parseType(type: Primitive | string): {
+	private parseType(declaredType: string, scope: Scope): {
 		type: string;
 		count: number,
-		bits?: number
+		flags: TypeFlags
 	} {
+
+		const { type, flags } = this.extractFlags(declaredType);
 		const indexed = arrayRegex.exec(type);
 		if (indexed) {
 			return {
 				type: indexed[1],
-				count: this.getTypeLen(indexed[3])
+				count: this.getTypeLen(indexed[3], scope),
+				flags
 			}
 		}
 		const bitfield = bitFieldRegex.exec(type);
 		if (bitfield) {
+			flags.bits = this.getTypeLen(bitfield[3], scope);
+
 			return {
 				type: bitfield[1],
 				count: 1,
-				bits: this.getTypeLen(bitfield[3])
+				flags
 			}
 		}
-		return { type, count: 1 };
+		return { type, count: 1, flags };
 	}
 
-	private getTypeLen(val: string): number {
-		return parseInt(val, 10) || 1;
+	private getTypeLen(val: string, scope: Scope): number {
+		let number = parseInt(val, 10);
+		if (isNaN(number)) {
+			let expr = val;
+			for (const v in scope) {
+				expr = expr.replace(v, (scope[v] || '').toString());
+			}
+			number = parseInt(eval(expr), 10);
+			if (isNaN(number)) {
+				throw new Error(`Expected number but got ${val}`);
+			}
+		}
+		return number;
 	}
 
 	private isScheme(val: string | Scheme): val is Scheme {
@@ -263,6 +315,28 @@ export class Template {
 
 	private sliceBits(value: number, bits: number): number {
 		return ((1 << bits) - 1) & value;
+	}
+
+	private extractFlags(type: string): { type: string; flags: TypeFlags } {
+		const flags: TypeFlags = { align: 0 };
+		const parts = type.split(';');
+		if (parts.length > 1) {
+			const extra = parts[1].split(',');
+			for (const e of extra) {
+				const [name, value] = e.trim().split(' ');
+				switch (name) {
+					case 'align':
+						const align = parseInt(value, 10);
+						if (align > 0) {
+							flags.align = align;
+						}
+						break;
+					default:
+						throw new Error(`Unknown flag name ${name}`);
+				}
+			}
+		}
+		return { type: parts[0].trim(), flags };
 	}
 
 }

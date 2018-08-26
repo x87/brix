@@ -12,9 +12,11 @@
 		[data]="reader?.data"
 		[scheme]="scheme"></brix-template-pane>
 	<div class="cols">
-		<input type="file"
-			   (change)="onOpen($event)"
-			   value="Open">
+		<button class="open">Open File
+			<input type="file"
+				   (change)="onOpen($event)"
+				   value="Open">
+		</button>
 		<textarea
 			class="pane"
 			wrap="off"

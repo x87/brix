@@ -18,7 +18,8 @@ export class EditorComponent implements OnInit {
 	}
 
 	onOpen($event: Event): void {
-		const { files } = $event.target as HTMLInputElement;
+		const input = $event.target as HTMLInputElement;
+		const { files } = input;
 		if (files && files.length) {
 			const fileStream = new FileStream(files[0]);
 			fileStream.stream.subscribe(
@@ -28,6 +29,7 @@ export class EditorComponent implements OnInit {
 				}
 
 			);
+			input.value = '';
 		}
 	}
 }

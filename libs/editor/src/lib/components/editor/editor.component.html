@@ -10,12 +10,15 @@
 	<brix-template-pane
 		class="pane"
 		[data]="reader?.data"
-		[scheme]="scheme"></brix-template-pane>
+		[ast]="ast"></brix-template-pane>
 	<div class="cols">
 		<button class="open">Open File
 			<input type="file"
 				   (change)="onOpen($event)"
 				   value="Open">
+		</button>
+		<button (click)="onSave($event)">
+			Save to File
 		</button>
 		<textarea
 			class="pane"

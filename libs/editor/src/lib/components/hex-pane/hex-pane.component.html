@@ -2,7 +2,7 @@
 	<cdk-virtual-scroll-viewport
 		class="virtual-viewport"
 		[bufferSize]="35"
-		[itemSize]="20">
+		[itemSize]="16">
 		<div *cdkVirtualFor="let row of rows; let i = index"
 			 class="row"
 			 [ngClass]="{ 'odd': i % 2 }">

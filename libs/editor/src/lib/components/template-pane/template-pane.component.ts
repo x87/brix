@@ -1,6 +1,6 @@
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
-import { AST, Template } from '../../model/Template';
-import { Node } from '../../model/Template';
+import { AST } from '../../model/AST';
+import { Node } from '../../model'
 
 @Component({
 	selector: 'brix-template-pane',
@@ -8,11 +8,8 @@ import { Node } from '../../model/Template';
 	styleUrls: ['./template-pane.component.scss']
 })
 export class TemplatePaneComponent implements OnChanges {
-	@Input() scheme: string;
+	@Input() ast: AST;
 	@Input() data: DataView;
-
-	template: Template;
-	ast: AST;
 
 	fields: Array<{
 		title: string;
@@ -22,10 +19,7 @@ export class TemplatePaneComponent implements OnChanges {
 	}>;
 
 	ngOnChanges(changes: SimpleChanges): void {
-		if (this.scheme && this.data) {
-			this.template = new Template(this.scheme);
-			this.ast = this.template.parse(this.data);
-
+		if (this.ast && this.data) {
 			this.fields = [];
 			this.ast.traverse((node: Node, level: number) => {
 				this.fields.push({
@@ -38,6 +32,5 @@ export class TemplatePaneComponent implements OnChanges {
 
 		}
 	}
-
 
 }

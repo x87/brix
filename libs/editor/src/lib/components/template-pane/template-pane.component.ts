@@ -1,6 +1,6 @@
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { AST } from '../../model/AST';
-import { Node } from '../../model'
+import { isNode, Leaf, Node } from '../../model';
 
 @Component({
 	selector: 'brix-template-pane',
@@ -21,10 +21,10 @@ export class TemplatePaneComponent implements OnChanges {
 	ngOnChanges(changes: SimpleChanges): void {
 		if (this.ast && this.data) {
 			this.fields = [];
-			this.ast.traverse((node: Node, level: number) => {
+			this.ast.traverse((node: Node | Leaf, level: number) => {
 				this.fields.push({
-					title: node.title!,
-					value: node.value!,
+					title: node.title,
+					value: isNode(node) ? '' : node.value,
 					offset: node.offset,
 					level
 				});

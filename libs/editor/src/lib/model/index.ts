@@ -24,9 +24,23 @@ export interface Scope {
 	[key: string]: number | string;
 }
 
+export interface Tree {
+	root: Node;
+}
+
+export interface Leaf {
+	title: string;
+	offset: number;
+	value: string;
+}
+
 export interface Node {
 	title: string;
 	offset: number;
-	nodes?: Node[];
-	value?: string;
+	nodes: Array<Node | Leaf>;
 }
+
+export const isNode = (node: Node | Leaf): node is Node => {
+	return 'nodes' in node;
+};
+

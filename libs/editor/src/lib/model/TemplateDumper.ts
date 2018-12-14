@@ -1,16 +1,23 @@
-import { Node, Primitive, Scheme } from '.';
+import { isNode, Leaf, Node, Primitive, Scheme } from '.';
 import { Template } from './Template';
 import { AST } from './AST';
+
+class TreeStructureMismatchError extends Error {
+	constructor() {
+		super(`Tree does not match given scheme. Abort.`);
+		Object.setPrototypeOf(this, Error.prototype);
+	}
+}
 
 export class TemplateDumper extends Template {
 
 	public save(ast: AST): Blob {
 		if (!this.scheme) throw new Error('No valid scheme');
-		const views = this.dump(ast.root!.nodes!, this.scheme.entry || this.scheme);
+		const views = this.dump(ast.root.nodes, this.scheme.entry || this.scheme);
 		return new Blob(views.map(v => v.buffer), { type: 'application/octet-stream' });
 	}
 
-	private dump(nodes: Node[], scheme: Scheme): DataView[] {
+	private dump(nodes: Array<Node | Leaf>, scheme: Scheme): DataView[] {
 		let dataViews: Array<DataView | undefined> = [];
 		const scope: any = {};
 		let nodeIndex = 0;
@@ -20,41 +27,53 @@ export class TemplateDumper extends Template {
 			const node = nodes[nodeIndex++];
 
 			if (!node) {
-				throw new Error('Error while dumping AST to given template. Index out of bounds');
+				throw new TreeStructureMismatchError();
 			}
 
 			// nested struct
 			if (this.isScheme(declaredType)) {
-				dataViews = dataViews.concat(this.dump(node.nodes!, declaredType));
+				if (!isNode(node)) {
+					throw new TreeStructureMismatchError();
+				}
+				dataViews = dataViews.concat(this.dump(node.nodes, declaredType));
 				continue;
 			}
 
 			// array
 			const { type, count, flags } = this.parseType(declaredType, scope);
 			if (count > 1 && !this.isString(type)) {
+				if (!isNode(node)) {
+					throw new TreeStructureMismatchError();
+				}
 				dataViews = dataViews.concat(
-					this.dump(node.nodes!, this.typeToScheme(type, count, flags, title)),
+					this.dump(node.nodes, this.typeToScheme(type, count, flags, title)),
 					flags.align ? this.setValue(0, Primitive.Byte, flags.align) : undefined
 				);
 				continue;
 			}
 
 			// single custom struct
-			const customType = this.scheme![type];
+			const customType = (this.scheme as Scheme)[type];
 			if (this.isScheme(customType) && (type !== 'entry')) {
+				if (!isNode(node)) {
+					throw new Error(`Tree does not match given scheme. Abort.`);
+				}
 				dataViews = dataViews.concat(
-					this.dump(node.nodes!, customType),
+					this.dump(node.nodes, customType),
 					flags.align ? this.setValue(0, Primitive.Byte, flags.align) : undefined
 				);
 				continue;
 			}
 
+			if (isNode(node)) {
+				throw new TreeStructureMismatchError();
+			}
 			// single primitive value
-			const value = node.value!;
+			const value = node.value;
 			const res = flags.bits
 				? this.sliceBits(+value, flags.bits)
 				: value;
-			const view = this.setValue(res!, type, count);
+			const view = this.setValue(res, type, count);
 			dataViews = dataViews.concat(
 				view,
 				flags.align ? this.setValue(0, Primitive.Byte, flags.align) : undefined

@@ -29,7 +29,7 @@ export class HexPaneComponent {
 	}
 
 	get capacity(): number {
-		const scrollWidth = 40; // todo;
+		const scrollWidth = 8; // todo;
 		const width = this.pane.nativeElement.clientWidth - scrollWidth;
 		const hexCharWidth = 20;
 		const textCharWidth = 8;

@@ -1,0 +1,103 @@
+SYSTEMTIME:
+    wYear:         word
+    wMonth:        word
+    wDayOfWeek:    word
+    wDay:          word
+    wHour:         word
+    wMinute:       word
+    wSecond:       word
+    wMilliseconds: word
+
+RwV3D:
+    x: float
+    y: float
+    z: float
+
+ContactInfo:
+    nMissionFlag:   dword
+    nBaseBrief:     dword
+
+BuildingSwap:
+    type:            dword
+    nBuildingHandle: dword
+    nNewModel:       int32
+    nOldModel:       int32
+
+RunningScript:
+    pNext:                    dword
+    pPrev:                    dword
+    szName:                   char[8]
+    nCurrentIp:               dword
+    nReturnStack:             dword[6]
+    nStackCounter:            word ; align 2
+    nLocals:                  dword[16]
+    nTimerA:                  dword
+    nTimerB:                  dword
+    bIfResult:                byte
+    bIsMissionScript:         byte
+    bIsActive:                byte ; align 1
+    nWakeTime:                dword
+    nIfNumber:                word
+    bNotFlag:                 byte
+    bDeathArrestCheckEnabled: byte
+    bIsDeadOrArrested:        byte
+    bIsRunningAMission:       byte ; align 2
+
+InvisibilitySetting:
+    nType:          dword
+    nHandle:        dword
+
+SimpleVars:
+    size:           dword
+    data:
+        szTitle:                    wchar_t[24]
+        systemTime:                 SYSTEMTIME
+        unknown1:                   dword
+        eCurrentLevel:              dword
+        vCamPos:                    RwV3D
+        nMillisecondsPerGameMinute: dword
+        nLastClockTick:             dword
+        nHours:                     byte ; align 3
+        nMinutes:                   byte ; align 3
+        nCurrentPadMode:            word ; align 2
+        nTimeInMilliseconds:        dword
+        fTimeScale:                 float
+        fTimerTimeStep:             float
+        fTimerTimeStepNonClipped:   float
+        nFrameCounter:              dword
+        _fTimeScale:                float
+        _fTimerTimeStep:            float
+        _fTimerTimeStepNonClipped:  float
+        nOldWeatherType:            int16 ; align 2
+        nNewWeatherType:            int16 ; align 2
+        nForcedWeatherType:         int16 ; align 2
+        fWeatherInterpolationValue: float
+        _szCompileTime:             byte[24]
+        nWeatherTypeInList:         dword
+        _unknown1:                  float
+        _unknown2:                  float
+        
+        size:                       dword
+        scripts:
+            sig:                    char[4]
+            size:                   dword
+            data:
+                nVariableSpaceSize: dword
+                aScriptVariable:    dword[nVariableSpaceSize / 4]
+                size:               dword
+                data:
+                    nOnAMissionFlag:                  dword
+                    aContactInfo:                     ContactInfo[16]
+                    unknown:                          dword[64]
+                    nLastMissionPassedTime:           dword
+                    aBuildingSwap:                    BuildingSwap[25]
+                    aInvisibilitySetting:             InvisibilitySetting[20]
+                    bAlreadyRunningAMissionScript:    byte ; align 3
+                    nMainScriptSize:                  dword
+                    nLargestMissionScriptSize:        dword
+                    nNumberOfExclusiveMissionScripts: int16 ; align 2
+                nNumActiveScripts:  dword
+                aRunningScript:     RunningScript[nNumActiveScripts]
+
+entry:
+    section0: SimpleVars

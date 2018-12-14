@@ -8,4 +8,24 @@ html, body {
 body {
 	margin: 0;
 	font-family: 'Source Code Pro', monospace;
+	font-size: 12px;
+}
+
+::-webkit-scrollbar-track {
+	background: none;
+}
+
+::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+	background: none;
+}
+
+::-webkit-scrollbar-thumb {
+	border-radius: 10px;
+	background-color: #d1d1d1;
+}
+
+textarea {
+	border: none;
 }

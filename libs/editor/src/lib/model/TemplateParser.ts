@@ -1,4 +1,4 @@
-import { Node, Primitive, Scheme } from '.';
+import { Leaf, Node, Primitive, Scheme } from '.';
 import { Template } from './Template';
 import { AST } from './AST';
 
@@ -8,21 +8,19 @@ export class TemplateParser extends Template {
 	public parse(data: DataView, title: string = ''): AST {
 		if (!this.scheme) throw new Error('No valid scheme');
 
-		const ast = new AST();
 		this.offset = 0;
-		ast.root = {
+		return new AST({
 			title,
 			offset: 0,
 			nodes: this.parseScheme(
 				data,
 				this.scheme.entry || this.scheme
 			)
-		};
-		return ast;
+		});
 	}
 
-	private parseScheme(data: DataView, scheme: Scheme): Node[] {
-		const nodes: Node[] = [];
+	private parseScheme(data: DataView, scheme: Scheme): Array<Node | Leaf> {
+		const nodes: Array<Node | Leaf> = [];
 		const scope: any = {};
 
 		if (!scheme) throw new Error('Invalid scheme provided to parseScheme');
@@ -54,7 +52,7 @@ export class TemplateParser extends Template {
 			}
 
 			// single custom struct
-			const customType = this.scheme![type];
+			const customType = (this.scheme as Scheme)[type];
 			if (this.isScheme(customType) && (type !== 'entry')) {
 				nodes.push({
 					title,

@@ -14,6 +14,7 @@ import {
 import {
 	HexCodePipe, PrintableAsciiPipe
 } from './pipes';
+import { MatButtonModule, MatIconModule, MatMenuModule } from '@angular/material';
 
 @NgModule({
 	declarations: [
@@ -25,6 +26,9 @@ import {
 		PrintableAsciiPipe
 	],
 	imports: [
+		MatMenuModule,
+		MatIconModule,
+		MatButtonModule,
 		FormsModule,
 		CommonModule,
 		RouterModule.forChild(routes),

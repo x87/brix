@@ -1,3 +1,19 @@
+<mat-menu #appMenu="matMenu">
+	<button mat-menu-item class="open">Open File...
+		<input type="file"
+			   (change)="onOpen($event)"
+			   value="Open">
+	</button>
+	<button mat-menu-item>Open Scheme...</button>
+	<button mat-menu-item (click)="onSave($event)">Save to File...</button>
+</mat-menu>
+
+<div class="menu">
+	<button mat-icon-button [matMenuTriggerFor]="appMenu" title="File">
+		<mat-icon>folder</mat-icon>
+	</button>
+</div>
+
 <div class="panes">
 	<brix-hex class="pane"
 			  [content]="content"></brix-hex>
@@ -11,19 +27,9 @@
 		class="pane"
 		[data]="reader?.data"
 		[ast]="ast"></brix-template-pane>
-	<div class="cols">
-		<button class="open">Open File
-			<input type="file"
-				   (change)="onOpen($event)"
-				   value="Open">
-		</button>
-		<button (click)="onSave($event)">
-			Save to File
-		</button>
-		<textarea
-			class="pane"
-			wrap="off"
-			[ngModelOptions]="{ updateOn: 'blur' }"
-			[(ngModel)]="scheme"></textarea>
-	</div>
+	<textarea
+		class="pane"
+		wrap="off"
+		[ngModelOptions]="{ updateOn: 'blur' }"
+		[(ngModel)]="scheme"></textarea>
 </div>

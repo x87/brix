@@ -1,5 +1,6 @@
 .pane {
 	flex: 1;
+	outline: 1px solid #ddd;
 }
 
 .panes {
@@ -27,7 +28,6 @@
 	}
 }
 
-button {
-	padding: 0;
-	border: 0;
+.menu {
+	border-bottom: 1px solid #eee;
 }

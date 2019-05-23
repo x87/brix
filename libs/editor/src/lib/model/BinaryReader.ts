@@ -6,9 +6,13 @@ export class BinaryReader {
 	}
 
 	asBytes(): string[] {
-		const utf8View = new Uint8Array(
-			this.data.buffer, 0, this.data.byteLength
-		);
+		const utf8View = new Uint8Array(this.data.buffer);
 		return utf8View.toString().split(',');
+	}
+
+
+	toString(): string {
+		const utf8View = new Uint8Array(this.data.buffer);
+		return utf8View.join('');
 	}
 }

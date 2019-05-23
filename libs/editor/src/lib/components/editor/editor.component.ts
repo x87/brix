@@ -18,7 +18,7 @@ export class EditorComponent implements OnInit {
 	ast: AST;
 
 	ngOnInit(): void {
-		this.scheme = require('raw-loader!../../schemes/test2.scheme.yml');
+		this.scheme = require('raw-loader!../../schemes/chase.scheme.yml');
 	}
 
 	onOpen($event: Event): void {

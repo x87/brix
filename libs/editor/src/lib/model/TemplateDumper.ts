@@ -56,7 +56,7 @@ export class TemplateDumper extends Template {
 			const customType = (this.scheme as Scheme)[type];
 			if (this.isScheme(customType) && (type !== 'entry')) {
 				if (!isNode(node)) {
-					throw new Error(`Tree does not match given scheme. Abort.`);
+					throw new Error(`Tree does not match given scheme. Aborting.`);
 				}
 				dataViews = dataViews.concat(
 					this.dump(node.nodes, customType),

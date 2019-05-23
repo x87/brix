@@ -7,7 +7,7 @@ export enum Primitive {
 	Int32 = 'int32',
 	Dword = 'dword',
 	Float = 'float',
-	Wchar_t = 'wchar_t',
+	Wchar_t = 'wchar_t'
 }
 
 export interface Scheme {
@@ -18,10 +18,10 @@ export type SchemeWithEntry = Scheme & {
 	// file scheme may have an optional entry point to start from
 	// as there are could be custom structures declared in the same scheme
 	entry?: Scheme;
-}
+};
 
 export interface Scope {
-	[key: string]: number | string;
+	[key: string]: number | string | (() => number | string);
 }
 
 export interface Tree {
@@ -43,4 +43,3 @@ export interface Node {
 export const isNode = (node: Node | Leaf): node is Node => {
 	return 'nodes' in node;
 };
-

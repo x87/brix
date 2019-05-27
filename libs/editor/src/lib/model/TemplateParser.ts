@@ -1,174 +1,172 @@
-import { Leaf, Node, Primitive, Scheme } from '.';
-import { Template } from './Template';
+import { Leaf, Node, Primitive, Scheme, FieldValue, Scope } from '.';
+import { Template, NoSchemeError } from './Template';
 import { AST } from './AST';
+
+function ScopeFactory(data: DataView): Scope {
+  return {
+    fileSize: () => data.byteLength
+  };
+}
 
 export class TemplateParser extends Template {
   private offset: number;
+  private data: DataView;
 
   public parse(data: DataView, title: string = ''): AST {
-    if (!this.scheme) throw new Error('No valid scheme');
-
     this.offset = 0;
+    this.data = data;
     return new AST({
       title,
       offset: 0,
-      nodes: this.parseScheme(data, this.scheme.entry || this.scheme)
+      nodes: this.parseScheme(this.entryScheme)
     });
   }
 
-  private parseScheme(data: DataView, scheme: Scheme): Array<Node | Leaf> {
-    const nodes: Array<Node | Leaf> = [];
-    const scope: any = {
-      fileSize: () => data.byteLength
-    };
+  private parseScheme(scheme: Scheme): Array<Node | Leaf> {
+    if (!scheme) {
+      throw new NoSchemeError();
+    }
+    const scope = ScopeFactory(this.data);
+    return Object.entries(scheme).map(([title, declaredType]) =>
+      this.getNode(title, declaredType, scope)
+    );
+  }
 
-    if (!scheme) throw new Error('Invalid scheme provided to parseScheme');
-    for (const [title, declaredType] of Object.entries(scheme)) {
-      const offset = this.offset;
+  private getNode(
+    title: string,
+    declaredType: string | Scheme,
+    scope: Scope
+  ): Node | Leaf {
+    const offset = this.offset;
 
-      // nested struct
-      if (this.isScheme(declaredType)) {
-        nodes.push({
-          title,
-          offset,
-          nodes: this.parseScheme(data, declaredType)
-        });
-        continue;
-      }
-
-      // array
-      const { type, count, flags } = this.parseType(declaredType, scope);
-      if (count > 1 && !this.isString(type)) {
-        nodes.push({
-          title,
-          offset,
-          nodes: this.parseScheme(
-            data,
-            this.typeToScheme(type, count, flags, title)
-          )
-        });
-        this.moveCursor(Primitive.Byte, flags.align);
-        continue;
-      }
-
-      // single custom struct
-      const customType = (this.scheme as Scheme)[type];
-      if (this.isScheme(customType) && type !== 'entry') {
-        nodes.push({
-          title,
-          offset,
-          nodes: this.parseScheme(data, customType)
-        });
-        this.moveCursor(Primitive.Byte, flags.align);
-        continue;
-      }
-
-      // single primitive value
-      let value = this.readValue(data, offset, type, count);
-
-      const maybeArray = this.tryIndexed(title);
-      if (flags.read && (this.scheme as Scheme)[flags.read]) {
-        const expr = (this.scheme as Scheme)[flags.read] as string;
-
-        if (maybeArray) {
-          const { type: arr, index } = maybeArray;
-          value = this.exprEval<(v: any, i: number, a: any[]) => any>(
-            expr,
-            scope
-          )(value, index, scope[arr]);
-        } else {
-          value = this.exprEval<(v: any) => any>(expr, scope)(value);
-        }
-      }
-
-      const res = flags.bits ? this.sliceBits(+value, flags.bits) : value;
-      nodes.push({
+    // nested struct
+    if (this.isScheme(declaredType)) {
+      const node = {
         title,
         offset,
-        value: res.toString()
-      });
-
-      if (maybeArray) {
-        const { type: arr, index } = maybeArray;
-        scope[arr] = scope[arr] || [];
-        scope[arr][index] = value;
-      } else {
-        scope[title] = value;
-      }
-      this.moveCursor(Primitive.Byte, flags.align);
+        nodes: this.parseScheme(declaredType)
+      };
+      return node;
     }
-    return nodes;
+
+    const { type, count, flags } = this.parseType(declaredType, scope);
+
+    // array
+    if (count > 1 && !this.isString(type)) {
+      const node = {
+        title,
+        offset,
+        nodes: this.parseScheme(this.typeToScheme(type, count, flags, title))
+      };
+      this.moveCursor(Primitive.Byte, flags.align);
+      return node;
+    }
+
+    // single custom struct
+    if (this.isValidStructName(type)) {
+      const value: Array<Node | Leaf> = this.transformPipe(
+        [this.schemeRefToTransformCallback(flags.read, scope)],
+        this.parseScheme(this.scheme[type] as Scheme)
+      );
+
+      const node = {
+        title,
+        offset,
+        nodes: value
+      };
+      this.moveCursor(Primitive.Byte, flags.align);
+      return node;
+    }
+
+    // single primitive value
+    {
+      const scopeRef = title;
+      const value: FieldValue = this.transformPrimitive(
+        [
+          this.schemeRefToTransformCallback(flags.read, scope),
+          (v: FieldValue) => (flags.bits ? this.sliceBits(+v, flags.bits) : v)
+        ],
+        scopeRef,
+        this.readValue(offset, type, count),
+        scope
+      );
+
+      this.updateScope(scopeRef, scope, value);
+      this.moveCursor(Primitive.Byte, flags.align);
+
+      const node = {
+        title,
+        offset,
+        value: value.toString()
+      };
+      return node;
+    }
   }
 
   private readValue(
-    data: DataView,
     offset: number,
     type: string,
     count: number
-  ): number | string | Array<number | string> {
+  ): number | string {
     const primitive = this.toPrimitive(type);
     if (count > 1) {
       if (primitive === Primitive.Wchar_t) {
-        const res = this.readStringW(data, offset, count);
+        const res = this.readStringW(offset, count);
         this.moveCursor(primitive, count);
         return res;
       }
       if (primitive === Primitive.Char) {
-        const res = this.readString(data, offset, count);
+        const res = this.readString(offset, count);
         this.moveCursor(primitive, count);
         return res;
       }
       throw new Error(`Indexed type ${primitive} used in wrong context`);
     }
-    const value = this.readPrimitive(primitive, data, offset);
+    const value = this.readPrimitive(primitive, offset);
     this.moveCursor(primitive);
     return value;
   }
 
-  private readStringW(data: DataView, offset: number, count: number): string {
+  private readStringW(offset: number, maxLength: number): string {
     let i = 0;
     while (
-      i < count &&
-      this.readPrimitive(Primitive.Word, data, offset + i * 2)
+      i < maxLength &&
+      this.readPrimitive(Primitive.Word, offset + i * 2)
     ) {
       i++;
     }
-    const utf16View = new Uint16Array(data.buffer, offset, i);
+    const utf16View = new Uint16Array(this.data.buffer, offset, i);
     return String.fromCharCode.apply(null, utf16View);
   }
 
-  private readString(data: DataView, offset: number, count: number): string {
+  private readString(offset: number, maxLength: number): string {
     let i = 0;
-    while (i < count && this.readPrimitive(Primitive.Byte, data, offset + i)) {
+    while (i < maxLength && this.readPrimitive(Primitive.Byte, offset + i)) {
       i++;
     }
-    const utf8View = new Uint8Array(data.buffer, offset, i);
+    const utf8View = new Uint8Array(this.data.buffer, offset, i);
     return String.fromCharCode.apply(null, utf8View);
   }
 
-  private readPrimitive(
-    primitive: Primitive,
-    data: DataView,
-    offset: number
-  ): number | string {
+  private readPrimitive(primitive: Primitive, offset: number): number | string {
     switch (primitive) {
       case Primitive.Dword:
-        return data.getUint32(offset, true);
+        return this.data.getUint32(offset, true);
       case Primitive.Word:
-        return data.getUint16(offset, true);
+        return this.data.getUint16(offset, true);
       case Primitive.Byte:
-        return data.getUint8(offset);
+        return this.data.getUint8(offset);
       case Primitive.Int32:
-        return data.getInt32(offset, true);
+        return this.data.getInt32(offset, true);
       case Primitive.Int16:
-        return data.getInt16(offset, true);
+        return this.data.getInt16(offset, true);
       case Primitive.Char:
       case Primitive.Int8:
-        return data.getInt8(offset);
+        return this.data.getInt8(offset);
       case Primitive.Float:
-        return data.getFloat32(offset, true);
+        return this.data.getFloat32(offset, true);
       case Primitive.Wchar_t:
-        return this.readStringW(data, offset, 1);
+        return this.readStringW(offset, 1);
     }
   }
 

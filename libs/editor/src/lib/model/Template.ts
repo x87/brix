@@ -1,21 +1,40 @@
 import * as yml from 'js-yaml';
-import { Primitive, Scheme, SchemeWithEntry, Scope } from '.';
+import { Primitive, Scheme, SchemeWithEntry, Scope, FieldValue } from '.';
 
 const arrayRegex = new RegExp('(.+)(\\[(.+)\\])');
 const bitFieldRegex = new RegExp('(\\w+)(\\:(\\d+))');
 
-interface TypeFlags {
+export interface TypeFlags {
   bits?: number;
   align: number;
   read?: string;
   write?: string;
 }
 
+type TransformCallback<T> = (v: T, i?: number, a?: FieldValue[]) => T;
+
+export class TreeStructureMismatchError extends Error {
+  constructor() {
+    super(`Tree does not match the given scheme. Aborting.`);
+    Object.setPrototypeOf(this, Error.prototype);
+  }
+}
+
+export class NoSchemeError extends Error {
+  constructor() {
+    super(`No valid scheme. Aborting.`);
+    Object.setPrototypeOf(this, Error.prototype);
+  }
+}
+
 export class Template {
-  protected scheme: SchemeWithEntry | null;
+  protected scheme: SchemeWithEntry;
 
   constructor(scheme: string) {
     this.scheme = yml.load(scheme);
+    if (!this.scheme) {
+      throw new NoSchemeError();
+    }
   }
 
   protected typeToScheme(
@@ -72,7 +91,7 @@ export class Template {
   }
 
   protected getTypeLen(expr: string, scope: Scope): number {
-    const number = parseInt(this.exprEval<string>(expr, scope), 10);
+    const number = parseInt(this.scopify<string>(expr, scope), 10);
     if (isNaN(number)) {
       throw new Error(`Expected number but got ${number}`);
     }
@@ -129,7 +148,7 @@ export class Template {
     return { type: parts[0].trim(), flags };
   }
 
-  protected exprEval<T>(expr: string, scope: Scope): T {
+  protected scopify<T>(expr: string, scope: Scope): T {
     const exec = new Function(
       `return (${Object.keys(scope).join(',')}) => ${expr}`
     )();
@@ -145,6 +164,66 @@ export class Template {
         type: indexed[1],
         index: +indexed[3]
       };
+    }
+  }
+
+  protected get entryScheme(): Scheme {
+    return this.scheme.entry || this.scheme;
+  }
+
+  protected isValidStructName(name: string): boolean {
+    const customType = this.scheme[name];
+    return this.isScheme(customType) && name !== 'entry';
+  }
+
+  protected transformPipe<T>(
+    pipes: Array<TransformCallback<T>>,
+    value: T,
+    index?: number,
+    arr?: FieldValue[]
+  ): T {
+    return pipes.reduce((v, cb) => cb(v, index, arr), value);
+  }
+
+  protected transformPrimitive<T>(
+    pipes: Array<TransformCallback<T>>,
+    scopeRef: string,
+    value: T,
+    scope: Scope
+  ): T {
+    const maybeArray = this.tryIndexed(scopeRef);
+    if (maybeArray) {
+      const { type: arr, index } = maybeArray;
+      return this.transformPipe(pipes, value, index, scope[
+        arr
+      ] as FieldValue[]);
+    }
+    return this.transformPipe(pipes, value);
+  }
+
+  protected schemeRefToTransformCallback<T>(
+    tranformFnRef: string | undefined,
+    scope: Scope
+  ): TransformCallback<T> {
+    if (tranformFnRef && this.scheme[tranformFnRef]) {
+      const expr = this.scheme[tranformFnRef] as string;
+      return this.scopify(expr, scope);
+    }
+    return v => v;
+  }
+
+  protected updateScope(
+    scopeRef: string,
+    scope: Scope,
+    value: FieldValue
+  ): void {
+    const maybeArray = this.tryIndexed(scopeRef);
+    if (maybeArray) {
+      const { type: arr, index } = maybeArray;
+      scope[arr] = scope[arr] || [];
+      scope[arr][index] = value;
+    } else {
+      scope[scopeRef] = value;
     }
   }
 }

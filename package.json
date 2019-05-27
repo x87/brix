@@ -68,7 +68,7 @@
     "karma-jasmine": "1.1.2",
     "karma-jasmine-html-reporter": "1.3.0",
     "ngrx-store-freeze": "0.2.4",
-    "prettier": "1.14.2",
+    "prettier": "1.16.1",
     "protractor": "5.4.0",
     "raw-loader": "0.5.1",
     "ts-node": "5.0.1",
